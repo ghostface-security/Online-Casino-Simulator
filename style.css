@@ -1,0 +1,262 @@
+/* General body and page layout */
+body {
+    font-family: 'Helvetica', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-image: url('https://static.vecteezy.com/system/resources/previews/002/434/153/non_2x/casino-on-a-green-background-dice-gold-coins-cards-roulette-and-chips-illustration-vector.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    flex-direction: column;
+}
+
+/* Base container for all screens */
+.container {
+    background: rgba(0, 77, 0, 0.85);
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 800px;
+    width: 90%;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Specific styling for the main menu */
+#mainMenu {
+    gap: 20px;
+    padding: 40px;
+}
+
+h1 {
+    color: #FFD700;
+    margin-bottom: 25px;
+    font-size: 2.2em;
+}
+
+p {
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+/* Game status and controls */
+.game-status {
+    margin-bottom: 30px;
+}
+
+.bet-controls, .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+/* New container for horizontal hand layout */
+.game-hands-container {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+/* Hand and card display */
+.hand {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 0;
+    width: 45%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hand-label {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+    text-shadow: none;
+}
+
+.cards {
+    font-size: 2.5em;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.card {
+    background-color: #eee;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    border-radius: 5px;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.15);
+    color: #333;
+}
+
+.hidden-card {
+    background-color: #666;
+    color: white;
+}
+
+#result, #slotsResult, #threeCardResult {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin: 30px 0;
+    color: #FFD700;
+    text-shadow: 1px 1px #000;
+}
+
+/* Buttons and input fields */
+button {
+    padding: 12px 25px;
+    font-size: 1.1em;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* General button classes for consistency */
+.game-action-btn { background-color: #4CAF50; color: white; }
+.game-misc-btn { background-color: #FF9800; color: white; }
+.back-btn { background-color: #6c757d; color: white; }
+
+/* Specific overrides for different game actions */
+#hitBtn { background-color: #2196F3; color: white; }
+#standBtn, #threeCardFoldBtn { background-color: #f44336; color: white; }
+#doubleDownBtn, #threeCardPlayBtn { background-color: #007bff; color: white; }
+
+
+#betInput, #slotsBetInput, #threeCardBetInput {
+    width: 70px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #bbb;
+    text-align: center;
+    font-size: 1em;
+}
+
+.menu-btn {
+    background-color: #5cb85c;
+    color: white;
+    padding: 18px 35px;
+    font-size: 1.2em;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.menu-btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transform: scale(1.02);
+}
+
+#fundsDisplay {
+    font-size: 1.6em;
+    font-weight: bold;
+    color: #FFD700;
+    text-shadow: 2px 2px #000;
+}
+
+#userIdDisplay {
+    font-size: 0.8em;
+    margin-top: 10px;
+    color: #bbb;
+}
+
+.disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Modal styling for adding funds and general messages */
+.modal {
+    position: fixed;
+    z-index: 10;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.modal-content {
+    background-color: #004D00;
+    padding: 30px;
+    border: 1px solid #666;
+    width: 85%;
+    max-width: 350px;
+    text-align: center;
+    border-radius: 10px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+.modal-content h2 {
+    margin-top: 0;
+    color: #FFD700;
+    font-size: 1.8em;
+}
+#initialFundsInput, #addFundsInput {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #bbb;
+    text-align: center;
+    font-size: 1em;
+    width: 80%;
+}
+#startGameBtn, #confirmAddFundsBtn {
+    background-color: #5cb85c;
+    color: white;
+    padding: 12px 25px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+#startGameBtn:hover, #confirmAddFundsBtn:hover {
+    background-color: #4cae4c;
+}
+#cancelAddFundsBtn {
+    background-color: #f44336;
+    color: white;
+    padding: 12px 25px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+#cancelAddFundsBtn:hover {
+    background-color: #e53935;
+}

@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+</head>
+<body>
+    
+    <div class="container" id="mainMenu" style="display: flex;">
+        <h1>Welcome to the Online Casino!</h1>
+        <p id="fundsDisplayMainMenu">Funds: $0</p>
+        <p>Please select a game to play:</p>
+        <button class="menu-btn" id="blackjackBtn">Play Blackjacks</button>
+        <button class="menu-btn" id="slotsBtn">Play Slots</button>
+        <button class="menu-btn" id="threeCardBtn">Play Three Card Poker</button>
+        <button class="menu-btn" id="addFundsMenuBtn">Add Funds</button>
+        <button class="menu-btn" id="cashOutMenuBtn">Cash Out</button>
+    </div>
+
+    <div class="container" id="blackjackContainer" style="display: none;">
+        <div class="game-status">
+            <p id="fundsDisplayBlackjack">Funds: $0</p>
+            <div class="bet-controls">
+                <label for="betInput">Place your bet:</label>
+                <input type="number" id="betInput" value="100" min="1">
+                <button class="game-action-btn" id="dealBtn">Deal</button>
+                <button class="game-misc-btn" id="addFundsBtn">Add Funds</button>
+                <button class="game-misc-btn" id="cashOutBtn">Cash Out</button>
+            </div>
+        </div>
+
+        <div class="game-hands-container">
+            <div class="hand">
+                <div class="hand-label">Dealer's Hand:</div>
+                <div id="dealerCards" class="cards"></div>
+                <div id="dealerScore"></div>
+            </div>
+
+            <div class="hand">
+                <div class="hand-label">Your Hand:</div>
+                <div id="playerCards" class="cards"></div>
+                <div id="playerScore"></div>
+            </div>
+        </div>
+        
+        <p id="result"></p>
+
+        <div class="controls">
+            <button class="game-action-btn" id="hitBtn" disabled>Hit</button>
+            <button class="game-action-btn" id="standBtn" disabled>Stand</button>
+            <button class="game-action-btn" id="doubleDownBtn" disabled>Double Down</button>
+            <button class="back-btn" id="backToMenuBtn">Back to Main Menu</button>
+        </div>
+    </div>
+
+    <div class="container" id="slotsContainer" style="display: none;">
+        <div class="game-status">
+            <h1>Slots!</h1>
+            <p id="fundsDisplaySlots">Funds: $0</p>
+            <div class="bet-controls">
+                <label for="slotsBetInput">Place your bet:</label>
+                <input type="number" id="slotsBetInput" value="50" min="1">
+                <button class="game-action-btn" id="spinBtn">Spin</button>
+                <button class="game-misc-btn" id="addFundsSlotsBtn">Add Funds</button>
+                <button class="game-misc-btn" id="cashOutSlotsBtn">Cash Out</button>
+            </div>
+        </div>
+        <div id="slotsDisplay" class="cards">🎰🍇🍒</div>
+        <p id="slotsResult"></p>
+        <div class="controls">
+            <button class="back-btn" id="slotsBackBtn">Back to Main Menu</button>
+        </div>
+    </div>
+
+    <div class="container" id="threeCardContainer" style="display: none;">
+        <div class="game-status">
+            <h1>Three Card Poker!</h1>
+            <p id="fundsDisplayThreeCard">Funds: $0</p>
+            <div class="bet-controls">
+                <label for="threeCardBetInput">Place your bet:</label>
+                <input type="number" id="threeCardBetInput" value="50" min="1">
+                <button class="game-action-btn" id="threeCardDealBtn">Deal</button>
+                <button class="game-misc-btn" id="addFundsThreeCardBtn">Add Funds</button>
+                <button class="game-misc-btn" id="cashOutThreeCardBtn">Cash Out</button>
+            </div>
+        </div>
+        <div class="game-hands-container">
+            <div class="hand">
+                <div class="hand-label">Dealer's Hand:</div>
+                <div id="threeCardDealerCards" class="cards"></div>
+            </div>
+            <div class="hand">
+                <div class="hand-label">Your Hand:</div>
+                <div id="threeCardPlayerCards" class="cards"></div>
+            </div>
+        </div>
+        <p id="threeCardResult"></p>
+        <div class="controls">
+            <button class="game-action-btn" id="threeCardPlayBtn" disabled>Play</button>
+            <button class="game-action-btn" id="threeCardFoldBtn" disabled>Fold</button>
+            <button class="back-btn" id="threeCardBackBtn">Back to Main Menu</button>
+        </div>
+    </div>
+    
+    <div id="addFundsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Add Funds</h2>
+            <p>Enter amount to add:</p>
+            <input type="number" id="addFundsInput" value="100">
+            <button class="confirm-btn" id="confirmAddFundsBtn">Add</button>
+            <button class="cancel-btn" id="cancelAddFundsBtn">Cancel</button>
+        </div>
+    </div>
+
+    <div id="messageModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <p id="messageText"></p>
+            <button class="confirm-btn" id="messageConfirmBtn">OK</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.onload = async () => {
+            // Firebase configuration from the environment
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+            let app;
+            let db;
+            let auth;
+            let userId;
+
+            let funds = 0;
+            let fundsBeforeBet = 0;
+            let bet = 0;
+            let playerCards = [];
+            let dealerCards = [];
+            let isGameOver = true;
+            let currentGame = null;
+
+            const cards = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+            // UI Elements
+            const mainMenu = document.getElementById('mainMenu');
+            const blackjackContainer = document.getElementById('blackjackContainer');
+            const slotsContainer = document.getElementById('slotsContainer');
+            const threeCardContainer = document.getElementById('threeCardContainer');
+            const messageModal = document.getElementById('messageModal');
+            const addFundsModal = document.getElementById('addFundsModal');
+            const addFundsInput = document.getElementById('addFundsInput');
+            const confirmAddFundsBtn = document.getElementById('confirmAddFundsBtn');
+            const cancelAddFundsBtn = document.getElementById('cancelAddFundsBtn');
+            
+            const blackjackBtn = document.getElementById('blackjackBtn');
+            const slotsBtn = document.getElementById('slotsBtn');
+            const threeCardBtn = document.getElementById('threeCardBtn');
+            const addFundsMenuBtn = document.getElementById('addFundsMenuBtn');
+            const cashOutMenuBtn = document.getElementById('cashOutMenuBtn');
+            const backToMenuBtn = document.getElementById('backToMenuBtn');
+            const slotsBackBtn = document.getElementById('slotsBackBtn');
+            const threeCardBackBtn = document.getElementById('threeCardBackBtn');
+
+            const fundsDisplayMainMenu = document.getElementById('fundsDisplayMainMenu');
+            const fundsDisplayBlackjack = document.getElementById('fundsDisplayBlackjack');
+            const fundsDisplaySlots = document.getElementById('fundsDisplaySlots');
+            const fundsDisplayThreeCard = document.getElementById('fundsDisplayThreeCard');
+            const betInput = document.getElementById('betInput');
+            const dealBtn = document.getElementById('dealBtn');
+            const hitBtn = document.getElementById('hitBtn');
+            const standBtn = document.getElementById('standBtn');
+            const doubleDownBtn = document.getElementById('doubleDownBtn');
+            const addFundsBtn = document.getElementById('addFundsBtn');
+            const cashOutBtn = document.getElementById('cashOutBtn');
+            const resultDisplay = document.getElementById('result');
+            const dealerCardsEl = document.getElementById('dealerCards');
+            const playerCardsEl = document.getElementById('playerCards');
+            const dealerScoreEl = document.getElementById('dealerScore');
+            const playerScoreEl = document.getElementById('playerScore');
+            const messageText = document.getElementById('messageText');
+            const messageConfirmBtn = document.getElementById('messageConfirmBtn');
+
+            // Slots UI Elements
+            const slotsBetInput = document.getElementById('slotsBetInput');
+            const spinBtn = document.getElementById('spinBtn');
+            const slotsDisplay = document.getElementById('slotsDisplay');
+            const slotsResult = document.getElementById('slotsResult');
+            const addFundsSlotsBtn = document.getElementById('addFundsSlotsBtn');
+            const cashOutSlotsBtn = document.getElementById('cashOutSlotsBtn');
+
+            // Three Card Poker UI Elements
+            const threeCardBetInput = document.getElementById('threeCardBetInput');
+            const threeCardDealBtn = document.getElementById('threeCardDealBtn');
+            const threeCardPlayBtn = document.getElementById('threeCardPlayBtn');
+            const threeCardFoldBtn = document.getElementById('threeCardFoldBtn');
+            const threeCardPlayerCardsEl = document.getElementById('threeCardPlayerCards');
+            const threeCardDealerCardsEl = document.getElementById('threeCardDealerCards');
+            const threeCardResult = document.getElementById('threeCardResult');
+            const addFundsThreeCardBtn = document.getElementById('addFundsThreeCardBtn');
+            const cashOutThreeCardBtn = document.getElementById('cashOutThreeCardBtn');
+
+            // Firebase Initialization and Authentication
+            async function initializeFirebase() {
+                try {
+                    if (Object.keys(firebaseConfig).length > 0) {
+                        app = initializeApp(firebaseConfig);
+                        auth = getAuth(app);
+                        db = getFirestore(app);
+
+                        await new Promise((resolve) => {
+                            const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                                unsubscribe();
+                                if (user) {
+                                    userId = user.uid;
+                                } else if (initialAuthToken) {
+                                    try {
+                                        const userCredential = await signInWithCustomToken(auth, initialAuthToken);
+                                        userId = userCredential.user.uid;
+                                    } catch (error) {
+                                        console.error("Custom token sign-in failed:", error);
+                                        await signInAnonymously(auth);
+                                        userId = auth.currentUser.uid;
+                                    }
+                                } else {
+                                    await signInAnonymously(auth);
+                                    userId = auth.currentUser.uid;
+                                }
+                                setupFirestoreListener();
+                                resolve();
+                            });
+                        });
+                    }
+                } catch (e) {
+                    console.error("Firebase initialization or auth failed:", e);
+                }
+            }
+            
+            async function setupFirestoreListener() {
+                if (!db || !userId) {
+                    console.error("Firestore or User ID not available.");
+                    return;
+                }
+
+                const userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'game_data', 'user_funds');
+
+                onSnapshot(userDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        funds = docSnap.data().funds;
+                    } else {
+                        funds = 0;
+                    }
+                    updateFundsDisplay();
+                    if (funds <= 0 && document.getElementById('mainMenu').style.display !== 'flex' &&
+                        document.getElementById('addFundsModal').style.display !== 'flex') {
+                        showModal("You have run out of funds. Please add more to continue.", () => {
+                            showScreen(addFundsModal);
+                        });
+                    }
+                }, (error) => {
+                    console.error("Error listening to funds document:", error);
+                });
+            }
+            
+            async function updateFundsInFirestore(newFunds) {
+                if (!db || !userId) {
+                    console.error("Firestore or User ID not available.");
+                    return;
+                }
+                const userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'game_data', 'user_funds');
+                try {
+                    await setDoc(userDocRef, { funds: newFunds }, { merge: true });
+                } catch (e) {
+                    console.error("Error updating funds:", e);
+                }
+            }
+
+            function showModal(message, confirmAction) {
+                messageText.textContent = message;
+                messageModal.style.display = 'flex';
+                messageConfirmBtn.onclick = () => {
+                    messageModal.style.display = 'none';
+                    if (confirmAction) {
+                        confirmAction();
+                    }
+                };
+            }
+
+            function showScreen(screen) {
+                const screens = [mainMenu, blackjackContainer, slotsContainer, threeCardContainer, messageModal, addFundsModal];
+                screens.forEach(s => s.style.display = 'none');
+                screen.style.display = 'flex';
+            }
+
+            await initializeFirebase();
+            
+            // Event Listeners
+            blackjackBtn.addEventListener('click', () => {
+                currentGame = 'blackjack';
+                showScreen(blackjackContainer);
+            });
+
+            slotsBtn.addEventListener('click', () => {
+                currentGame = 'slots';
+                showScreen(slotsContainer);
+            });
+            
+            threeCardBtn.addEventListener('click', () => {
+                currentGame = 'threecard';
+                showScreen(threeCardContainer);
+            });
+            
+            addFundsMenuBtn.addEventListener('click', () => {
+                currentGame = null;
+                showScreen(addFundsModal);
+            });
+
+            backToMenuBtn.addEventListener('click', () => {
+                showScreen(mainMenu);
+                resetBlackjackGame();
+            });
+
+            slotsBackBtn.addEventListener('click', () => {
+                showScreen(mainMenu);
+                resetSlotsGame();
+            });
+
+            threeCardBackBtn.addEventListener('click', () => {
+                showScreen(mainMenu);
+                resetThreeCardGame();
+            });
+            
+            cashOutMenuBtn.addEventListener('click', () => {
+                showModal(`Funds have been cashed out: $${funds}\nThanks for playing!`, async () => {
+                    funds = 0;
+                    updateFundsDisplay();
+                    await updateFundsInFirestore(funds);
+                });
+            });
+
+
+            // Blackjack Game Logic
+            function updateFundsDisplay() {
+                fundsDisplayMainMenu.textContent = `Funds: $${funds}`;
+                fundsDisplayBlackjack.textContent = `Funds: $${funds}`;
+                fundsDisplaySlots.textContent = `Funds: $${funds}`;
+                fundsDisplayThreeCard.textContent = `Funds: $${funds}`;
+            }
+            
+            function renderCards(cards, element, hideFirst = false) {
+                element.innerHTML = '';
+                cards.forEach((card, index) => {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.classList.add('card');
+                    if (hideFirst && index === 0) {
+                        cardDiv.textContent = '?';
+                        cardDiv.classList.add('hidden-card');
+                    } else {
+                        cardDiv.textContent = card;
+                    }
+                    element.appendChild(cardDiv);
+                });
+            }
+
+            function calculateScore(cards) {
+                let score = 0;
+                let numAces = 0;
+
+                for (const card of cards) {
+                    if (card === 'A') {
+                        numAces++;
+                        score += 11;
+                    } else if (['K', 'Q', 'J'].includes(card)) {
+                        score += 10;
+                    } else {
+                        score += parseInt(card);
+                    }
+                }
+
+                while (score > 21 && numAces > 0) {
+                    score -= 10;
+                    numAces--;
+                }
+
+                return score;
+            }
+
+            function dealCard() {
+                const randomCardIndex = Math.floor(Math.random() * cards.length);
+                return cards[randomCardIndex];
+            }
+
+            async function dealCards() {
+                bet = parseInt(betInput.value);
+                if (isNaN(bet) || bet <= 0 || bet > funds) {
+                    showModal("Invalid bet.");
+                    return;
+                }
+
+                isGameOver = false;
+                fundsBeforeBet = funds;
+                funds -= bet;
+                updateFundsDisplay();
+                await updateFundsInFirestore(funds);
+                
+                playerCards = [dealCard(), dealCard()];
+                dealerCards = [dealCard(), dealCard()];
+
+                renderCards(playerCards, playerCardsEl);
+                playerScoreEl.textContent = `Score: ${calculateScore(playerCards)}`;
+
+                renderCards(dealerCards, dealerCardsEl, true);
+                dealerScoreEl.textContent = '';
+
+                resultDisplay.textContent = "";
+
+                dealBtn.disabled = true;
+                dealBtn.classList.add('disabled');
+                hitBtn.disabled = false;
+                hitBtn.classList.remove('disabled');
+                standBtn.disabled = false;
+                standBtn.classList.remove('disabled');
+                
+                if (funds >= bet) {
+                    doubleDownBtn.disabled = false;
+                    doubleDownBtn.classList.remove('disabled');
+                } else {
+                    doubleDownBtn.disabled = true;
+                    doubleDownBtn.classList.add('disabled');
+                }
+
+                if (calculateScore(playerCards) === 21) {
+                    stand();
+                }
+            }
+
+            function hit() {
+                playerCards.push(dealCard());
+                const playerScore = calculateScore(playerCards);
+                renderCards(playerCards, playerCardsEl);
+                playerScoreEl.textContent = `Score: ${playerScore}`;
+                
+                doubleDownBtn.disabled = true;
+                doubleDownBtn.classList.add('disabled');
+
+                if (playerScore > 21) {
+                    endGame("You bust! You lose.");
+                } else if (playerScore === 21) {
+                    stand();
+                }
+            }
+
+            async function doubleDown() {
+                if (funds < bet) {
+                    showModal("You don't have enough funds to double down.");
+                    return;
+                }
+                
+                fundsBeforeBet = funds;
+                funds -= bet;
+                bet *= 2;
+                updateFundsDisplay();
+                await updateFundsInFirestore(funds);
+
+                playerCards.push(dealCard());
+                renderCards(playerCards, playerCardsEl);
+                playerScoreEl.textContent = `Score: ${calculateScore(playerCards)}`;
+
+                stand();
+            }
+
+            function stand() {
+                hitBtn.disabled = true;
+                hitBtn.classList.add('disabled');
+                standBtn.disabled = true;
+                standBtn.classList.add('disabled');
+                doubleDownBtn.disabled = true;
+                doubleDownBtn.classList.add('disabled');
+
+                let dealerScore = calculateScore(dealerCards);
+                renderCards(dealerCards, dealerCardsEl);
+                dealerScoreEl.textContent = `Score: ${dealerScore}`;
+
+
+                const dealerTurn = setInterval(() => {
+                    if (dealerScore < 17) {
+                        dealerCards.push(dealCard());
+                        dealerScore = calculateScore(dealerCards);
+                        renderCards(dealerCards, dealerCardsEl);
+                        dealerScoreEl.textContent = `Score: ${dealerScore}`;
+                    } else {
+                        clearInterval(dealerTurn);
+                        checkWinner(dealerScore);
+                    }
+                }, 1000);
+            }
+
+            async function checkWinner(dealerScore) {
+                const playerScore = calculateScore(playerCards);
+                let message = "";
+                
+                if (playerScore > 21) {
+                    message = "You bust! You lose.";
+                } else if (dealerScore > 21) {
+                    message = "Dealer busts! You win!";
+                    funds = funds + bet * 2;
+                } else if (playerScore > dealerScore) {
+                    message = "You win!";
+                    funds = funds + bet * 2;
+                } else if (playerScore < dealerScore) {
+                    message = "You lose.";
+                } else {
+                    message = "It's a push (tie).";
+                    funds = funds + bet;
+                }
+                
+                updateFundsDisplay();
+                await updateFundsInFirestore(funds);
+                endGame(message);
+            }
+
+            function endGame(message) {
+                isGameOver = true;
+                resultDisplay.textContent = message;
+                
+                hitBtn.disabled = true;
+                hitBtn.classList.add('disabled');
+                standBtn.disabled = true;
+                standBtn.classList.add('disabled');
+                doubleDownBtn.disabled = true;
+                doubleDownBtn.classList.add('disabled');
+
+                if (funds <= 0) {
+                    dealBtn.disabled = true;
+                    dealBtn.classList.add('disabled');
+                    showModal("You have $0 in your account. Would you like to add more funds?", () => {
+                        currentGame = 'blackjack';
+                        showScreen(addFundsModal);
+                    });
+                } else {
+                    dealBtn.disabled = false;
+                    dealBtn.classList.remove('disabled');
+                }
+            }
+
+            function resetBlackjackGame() {
+                playerCards = [];
+                dealerCards = [];
+                isGameOver = true;
+                dealerCardsEl.innerHTML = '';
+                playerCardsEl.innerHTML = '';
+                dealerScoreEl.textContent = '';
+                playerScoreEl.textContent = '';
+                resultDisplay.textContent = '';
+                betInput.value = '100';
+                dealBtn.disabled = false;
+                dealBtn.classList.remove('disabled');
+                hitBtn.disabled = true;
+                hitBtn.classList.add('disabled');
+                standBtn.disabled = true;
+                standBtn.classList.add('disabled');
+                doubleDownBtn.disabled = true;
+                doubleDownBtn.classList.add('disabled');
+            }
+
+            dealBtn.addEventListener('click', dealCards);
+            hitBtn.addEventListener('click', hit);
+            standBtn.addEventListener('click', stand);
+            doubleDownBtn.addEventListener('click', doubleDown);
+
+            addFundsBtn.addEventListener('click', () => {
+                showScreen(addFundsModal);
+            });
+            
+            cashOutBtn.addEventListener('click', async () => {
+                showModal(`Funds have been cashed out: $${funds}\nThanks for playing!`, async () => {
+                    funds = 0;
+                    updateFundsDisplay();
+                    await updateFundsInFirestore(funds);
+                    resetBlackjackGame();
+                    showScreen(mainMenu);
+                });
+            });
+
+            // Slots Game Logic
+            const slotsSymbols = ['🍒', '🍋', '🔔', '💰', '💎'];
+            function playSlots() {
+                const slotsBet = parseInt(slotsBetInput.value);
+                if (isNaN(slotsBet) || slotsBet <= 0 || slotsBet > funds) {
+                    showModal("Invalid bet.");
+                    return;
+                }
+
+                funds -= slotsBet;
+                updateFundsInFirestore(funds);
+
+                const result = [
+                    slotsSymbols[Math.floor(Math.random() * slotsSymbols.length)],
+                    slotsSymbols[Math.floor(Math.random() * slotsSymbols.length)],
+                    slotsSymbols[Math.floor(Math.random() * slotsSymbols.length)]
+                ];
+                slotsDisplay.textContent = result.join(' ');
+                
+                let winnings = 0;
+                if (result[0] === result[1] && result[1] === result[2]) {
+                    winnings = slotsBet * 10;
+                    slotsResult.textContent = `JACKPOT! You win $${winnings}!`;
+                } else {
+                    slotsResult.textContent = "You lose. Try again!";
+                }
+
+                funds += winnings;
+                updateFundsInFirestore(funds);
+                updateFundsDisplay();
+            }
+
+            function resetSlotsGame() {
+                slotsDisplay.textContent = '🎰🍇🍒';
+                slotsResult.textContent = '';
+                slotsBetInput.value = '50';
+            }
+
+            spinBtn.addEventListener('click', playSlots);
+            addFundsSlotsBtn.addEventListener('click', () => {
+                currentGame = 'slots';
+                showScreen(addFundsModal);
+            });
+            cashOutSlotsBtn.addEventListener('click', async () => {
+                showModal(`Funds have been cashed out: $${funds}\nThanks for playing!`, async () => {
+                    funds = 0;
+                    updateFundsDisplay();
+                    await updateFundsInFirestore(funds);
+                    resetSlotsGame();
+                    showScreen(mainMenu);
+                });
+            });
+
+            // Three Card Poker Game Logic
+            let threeCardPlayerHand = [];
+            let threeCardDealerHand = [];
+            let threeCardAnteBet = 0;
+            let threeCardPlayBet = 0;
+
+            // New function to render three hidden cards
+            function renderThreeCardPokerDealerCards() {
+                threeCardDealerCardsEl.innerHTML = '';
+                for (let i = 0; i < 3; i++) {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.classList.add('card', 'hidden-card');
+                    cardDiv.textContent = '?';
+                    threeCardDealerCardsEl.appendChild(cardDiv);
+                }
+            }
+
+            async function dealThreeCardHands() {
+                threeCardAnteBet = parseInt(threeCardBetInput.value);
+                if (isNaN(threeCardAnteBet) || threeCardAnteBet <= 0 || threeCardAnteBet > funds) {
+                    showModal("Invalid bet.");
+                    return;
+                }
+
+                funds -= threeCardAnteBet;
+                updateFundsDisplay();
+                await updateFundsInFirestore(funds);
+
+                threeCardPlayerHand = [dealCard(), dealCard(), dealCard()];
+                threeCardDealerHand = [dealCard(), dealCard(), dealCard()];
+
+                renderCards(threeCardPlayerHand, threeCardPlayerCardsEl);
+                renderThreeCardPokerDealerCards(); // Use the new function to hide all three cards
+
+                threeCardDealBtn.disabled = true;
+                threeCardDealBtn.classList.add('disabled');
+                threeCardPlayBtn.disabled = false;
+                threeCardPlayBtn.classList.remove('disabled');
+                threeCardFoldBtn.disabled = false;
+                threeCardFoldBtn.classList.remove('disabled');
+                threeCardResult.textContent = '';
+            }
+
+            async function playThreeCard() {
+                threeCardPlayBet = threeCardAnteBet;
+                if (funds < threeCardPlayBet) {
+                    showModal("Not enough funds to make the play bet.");
+                    return;
+                }
+
+                funds -= threeCardPlayBet;
+                updateFundsDisplay();
+                await updateFundsInFirestore(funds);
+
+                renderCards(threeCardDealerHand, threeCardDealerCardsEl);
+                const playerRank = getThreeCardRank(threeCardPlayerHand);
+                const dealerRank = getThreeCardRank(threeCardDealerHand);
+
+                let winnings = 0;
+                let message = '';
+                if (dealerRank < 12) {
+                    message = `Dealer does not qualify (score: ${dealerRank}). You win even money on the ante!`;
+                    winnings = threeCardAnteBet * 2;
+                } else if (playerRank > dealerRank) {
+                    message = `You win! Your score: ${playerRank}, Dealer score: ${dealerRank}`;
+                    winnings = threeCardAnteBet + threeCardPlayBet;
+                } else if (playerRank < dealerRank) {
+                    message = `You lose. Your score: ${playerRank}, Dealer score: ${dealerRank}`;
+                } else {
+                    message = "It's a push (tie).";
+                    winnings = threeCardAnteBet + threeCardPlayBet;
+                }
+                
+                threeCardResult.textContent = message;
+                funds += winnings;
+                updateFundsInFirestore(funds);
+                updateFundsDisplay();
+                endThreeCardGame();
+            }
+
+            async function foldThreeCard() {
+                renderCards(threeCardDealerHand, threeCardDealerCardsEl); // Reveal dealer's cards on fold
+                threeCardResult.textContent = 'You folded. You lose your ante.';
+                updateFundsDisplay();
+                await updateFundsInFirestore(funds);
+                endThreeCardGame();
+            }
+
+            function getThreeCardRank(hand) {
+                let rank = 0;
+                hand.forEach(card => {
+                    if (card === 'A') rank += 14;
+                    else if (card === 'K') rank += 13;
+                    else if (card === 'Q') rank += 12;
+                    else if (card === 'J') rank += 11;
+                    else rank += parseInt(card);
+                });
+                return rank;
+            }
+
+            function endThreeCardGame() {
+                threeCardDealBtn.disabled = false;
+                threeCardDealBtn.classList.remove('disabled');
+                threeCardPlayBtn.disabled = true;
+                threeCardPlayBtn.classList.add('disabled');
+                threeCardFoldBtn.disabled = true;
+                threeCardFoldBtn.classList.add('disabled');
+                
+                if (funds <= 0) {
+                    threeCardDealBtn.disabled = true;
+                    threeCardDealBtn.classList.add('disabled');
+                    showModal("You have $0 in your account. Would you like to add more funds?", () => {
+                        currentGame = 'threecard';
+                        showScreen(addFundsModal);
+                    });
+                }
+            }
+            
+            function resetThreeCardGame() {
+                threeCardPlayerCardsEl.innerHTML = '';
+                threeCardDealerCardsEl.innerHTML = '';
+                threeCardResult.textContent = '';
+                threeCardBetInput.value = '50';
+                threeCardDealBtn.disabled = false;
+                threeCardDealBtn.classList.remove('disabled');
+                threeCardPlayBtn.disabled = true;
+                threeCardPlayBtn.classList.add('disabled');
+                threeCardFoldBtn.disabled = true;
+                threeCardFoldBtn.classList.add('disabled');
+                threeCardPlayerHand = [];
+                threeCardDealerHand = [];
+                threeCardAnteBet = 0;
+                threeCardPlayBet = 0;
+            }
+
+            threeCardDealBtn.addEventListener('click', dealThreeCardHands);
+            threeCardPlayBtn.addEventListener('click', playThreeCard);
+            threeCardFoldBtn.addEventListener('click', foldThreeCard);
+            addFundsThreeCardBtn.addEventListener('click', () => {
+                currentGame = 'threecard';
+                showScreen(addFundsModal);
+            });
+            cashOutThreeCardBtn.addEventListener('click', async () => {
+                showModal(`Funds have been cashed out: $${funds}\nThanks for playing!`, async () => {
+                    funds = 0;
+                    updateFundsDisplay();
+                    await updateFundsInFirestore(funds);
+                    resetThreeCardGame();
+                    showScreen(mainMenu);
+                });
+            });
+
+            // Modal Logic
+            confirmAddFundsBtn.addEventListener('click', async () => {
+                const amount = parseInt(addFundsInput.value);
+                if (!isNaN(amount) && amount > 0) {
+                    funds += amount;
+                    updateFundsDisplay();
+                    await updateFundsInFirestore(funds);
+                    addFundsModal.style.display = 'none';
+                    if (currentGame === 'blackjack') {
+                        showScreen(blackjackContainer);
+                        dealBtn.disabled = false;
+                        dealBtn.classList.remove('disabled');
+                    } else if (currentGame === 'slots') {
+                        showScreen(slotsContainer);
+                    } else if (currentGame === 'threecard') {
+                        showScreen(threeCardContainer);
+                    } else {
+                        showScreen(mainMenu);
+                    }
+                } else {
+                    showModal("Please enter a valid amount.");
+                }
+            });
+
+            cancelAddFundsBtn.addEventListener('click', () => {
+                addFundsModal.style.display = 'none';
+                if (currentGame === 'blackjack') {
+                    showScreen(blackjackContainer);
+                } else if (currentGame === 'slots') {
+                    showScreen(slotsContainer);
+                } else if (currentGame === 'threecard') {
+                    showScreen(threeCardContainer);
+                } else {
+                    showScreen(mainMenu);
+                }
+            });
+        };
+    </script>
+</body>
+</html>
